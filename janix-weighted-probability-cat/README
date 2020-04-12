@@ -1,0 +1,122 @@
+JXWPCAT(1)               General Commands Manual (usd)              JXWPCAT(1)
+
+NAME
+     jxwpcat - Janix Weighted Probability Cat
+
+SYNOPSIS
+     jxwpcat [-d] path ...
+     jxwpcat [-h]
+
+DESCRIPTION
+     jxwpcat chooses at random exactly one regular file from within path's
+     directory hierarchy then prints its contents to standard output.  Rather
+     than randomly picking "just any" file from "just any" directory, regular
+     files and directories within path must be named in a particular fashion
+     (see File Naming below) in order to be considered candidates for
+     selection.
+
+   Command-line Options and Arguments
+     Invoke jxwpcat alone, or with the -h option to display a brief help page
+     (to standard error) then to exit (successfully).
+
+     Otherwise, invoke jxwpcat with one or more path arguments to recursively
+     descend into each path's directory hierarchy looking for a random regular
+     file to print to standard output.  Note that if more than one such path
+     argument are supplied, jxwpcat will not begin locating a file from the
+     ith path until one has already been chosen and printed from the (i-1)th
+     path.
+
+     The -d option enables verbose debugging output to standard error.
+
+   File Naming
+     Regular files and directories within each path must be named as the
+     following examples illustrate or jxwpcat ignores them:
+
+           10-unix
+           25-computer-science
+           5-networking
+
+     The general pattern (in bash extended pattern extglob syntax) is:
+
+           +([[:digit:]])-*
+
+           which in English reads:
+
+           "one or more digits followed by a single dash followed by anything."
+
+   File Selection and Weighted Probability
+     jxwpcat uses the prefixing integer (e.g., the `10' from `10-unix', as
+     given in the above example) to decide how much weight should be given to
+     the file.  Think of balls placed into a bin.  Using the examples from
+     above:
+
+           "unix" would get 10 balls placed into the bin;
+           "computer-science" would get 25 balls placed into the bin; and
+           "networking" would get 5 balls placed into the bin.
+
+     After placing all the balls into the bin, exactly one ball is chosen at
+     random.  If the chosen "ball" happens to be a directory, then jxwpcat
+     recursively descends into it looking for a regular file; else if the
+     chosen "ball" is a regular file then its contents are printed to standard
+     output.  jxwpcat is now done with this path and proceeds to the next path
+     (if any).
+
+IMPLEMENTATION NOTES
+     jxwpcat uses the bash shell language exclusively.
+
+RETURN VALUES
+     jxwpcat returns 0 if it's able to successfully change directory into
+     every path argument and print every chosen regular file to standard
+     output; else jxwpcat returns 1 if it encounters a problem anywhere along
+     the way.
+
+EXAMPLE
+   A UNIX book fanatic
+     Suppose you want to partition the time you spend reading UNIX books
+     according to the following scheme:
+
+           25% design:
+                 33%:    "The Design and Implementation of the FreeBSD
+                         Operating System",
+                 33%:    "The Design of the UNIX Operating System", and
+                 33%:    "UNIX Internals: The New Frontiers"; and
+
+           75% systems programming:
+                 50%:    "The Linux Programming Interface: A Linux and UNIX
+                         System Programming Handbook", and
+                 50%:    "Advanced Programming in the UNIX Environment".
+
+   Commands to create the directories and file structures
+     mkdir -p unix-reading-plan/25-design unix-reading-plan/75-systems-programming
+
+     echo The Design and Implementation of the FreeBSD Operating System \
+         > unix-reading-plan/25-design/33-design-FreeBSD
+
+     echo The Design of the UNIX Operating System \
+         > unix-reading-plan/25-design/33-design-UNIX
+
+     echo UNIX Internals: The New Frontiers \
+         > unix-reading-plan/25-design/33-UNIX-internals
+
+     echo The Linux Programming Interface: A Linux and UNIX System Programming Handbook \
+         > unix-reading-plan/75-systems-programming/50-linux-prog-interface
+
+     echo Advanced Programming in the UNIX Environment \
+         > unix-reading-plan/75-systems-programming/50-adv-prog-unix-env
+
+     Once the above directories and files are in place, invoking jxwpcat with
+     an argument of `unix-reading-plan' results in exactly one of the books
+     being printed to standard output (randomly according to the weights in
+     the scheme).
+
+HISTORY
+     The author needed an automated facility to decide how much time to spend
+     studying different disciplines and books.  So, for my own personal use,
+     I've created a couple directories (for work and personal topics); jxwpcat
+     executes daily on those directories, with the results emailed to me
+     indicating which books I am to study that day.
+
+AUTHORS
+     Jason Massey <jason@janixsoft.com>
+
+Janix Software                   July 10, 2016                  Janix Software

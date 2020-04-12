@@ -1,0 +1,98 @@
+#!/usr/bin/perl
+# ------------------------------------------------------------------------
+# probability-tester `pt' by Jason Massey (AUG-05-2011)
+#
+#
+# PURPOSE
+#
+# `pt' is a "probability tester" which enables you to run a specific
+# command on a random basis. For example, if you want want a command to
+# execute 7 times out of 11 then you issue as follows:
+#
+#   pt 11 7 && /path/to/your/command [args...]
+#
+#
+# EXAMPLES
+#
+# You wish to have a command run at midnight, on average, seven days out of
+# every thirty days; place this entry into your crontab:
+#
+#   0 0 * * * pt 30 7 && /path/to/your/command [args...]
+#
+#
+# You wish to have a command run randomly five times every hour; place this
+# entry into your crontab
+#
+#   * * * * * pt 60 5 && /path/to/your/command [args...]
+#
+#
+# A NOTE ON PROBABILITY
+#
+# It is important for you to realize that `pt 30 7' will randomly cause
+# an event to run, ON AVERAGE, seven out of thirty times -- not EXACTLY
+# seven out of thirty times. So, your `pt 30 7' command, should you run it
+# ten thousand times, would return `0' (i.e., cause your command to run)
+# approximately 2,333 times, but not exactly. Classical probability must
+# be viewed as a "long term average."
+#
+#
+# SYNTAX
+#
+# pt denominator [numerator]
+#
+# If the numerator is omitted then it defaults to 1. The probability of `pt'
+# returning `0' (success) is given by proper fraction numeration/denominator.
+#
+#
+# RETURNS
+#
+#   0 if the random event happens
+#   1 otherwise
+#
+# ------------------------------------------------------------------------
+use Data::Dumper;
+
+# $debugging: 0 | 1
+my $debugging = 0;
+
+printf "\@ARGV = %d\n", scalar @ARGV if $debugging;
+
+# ensure the correct number of arguments
+die "syntax: pt denominator [numerator]\n"
+    unless( 1 <= @ARGV && @ARGV <= 2 );
+
+my $denominator = $ARGV[0];
+
+# default $numerator to `1' if not supplied on the command-line
+my $numerator = defined($ARGV[1]) ? $ARGV[1] : 1;
+
+# ensure they're both integers
+
+die "denominator ($denominator) is not a positive integer\n"
+    unless( $denominator =~ /^\d+$/ );
+
+die "numerator ($numerator) is not a positive integer\n"
+    unless( $numerator =~ /^\d+$/ );
+
+# ensure greater thans
+
+die "denominator ($denominator) must be greater than zero\n"
+    unless( $denominator > 0 );
+
+die "numerator ($numerator) must be greater than zero\n"
+    unless( $numerator > 0 );
+
+
+# seed the random number generator
+srand();
+
+# generate a random number between 1 and $denominator
+$random_pick = int(rand($denominator)) + 1;
+
+print "\$random_pick = $random_pick\n" if $debugging;
+
+exit (( $random_pick <= $numerator ) ? 0 : 1);
+
+# ------------------------------------------------------------------------
+# END OF SCRIPT
+# ------------------------------------------------------------------------

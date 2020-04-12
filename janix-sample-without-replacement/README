@@ -1,0 +1,114 @@
+JXSAMPWOR(1)		 General Commands Manual (usd)		  JXSAMPWOR(1)
+
+NAME
+     jxsampwor - Janix Sample Without Replacement
+
+SYNOPSIS
+     jxsampwor [-df] [-s /path/to/samples] element ...
+     jxsampwor -h
+
+DESCRIPTION
+     You can understand "sample without replacement" using the example of
+     drawing winning numbers for a lottery.  Imagine a box filled with ten
+     ping-pong balls, each labeled with a unique number from 1 to 10.  You
+     begin by shaking up the box then drawing the first winning number (say,
+     `3').  That act of extracting one of the balls from the population of
+     balls is known as "sampling".  As you reach to draw out the second
+     winning number, notice that you did not put the first ball back; that is,
+     you sampled the first ball without replacing it.  (Contrast this to
+     rolling a die: each toss constitutes a sample with replacement.  The
+     value just rolled/sampled continues being a possible sample in subsequent
+     tosses.  Said another way: with every toss you are drawing from the
+     entire population.) You draw out the second winning number, then the
+     third, and so forth, until you are satisfied or until the population of
+     balls is exhausted.
+
+     More generally, to "sample without replacement" means to randomly select
+     one element from a population of N elements, to process said element,
+     then to be left with the remaining N-1 non-selected elements. Iterate
+     until satisfied or until all the original N elements are consumed.  (With
+     this version of jxsampwor, on iteration N+1, the entire population of N
+     elements is replaced, and sampling resumes with all N to choose from.  In
+     a future version, option -N will be introduced to control this behavior.)
+
+     jxsampwor performs sampling without replacement of the elements supplied
+     on the command-line.  To take multiple samples, invoke jxsampwor
+     repeatedly with the exact same syntax (see EXAMPLES below).
+
+   Command-line Options and Arguments
+     Invoke jxsampwor alone or with the -h option to display a brief help page
+     (to standard error) then to exit (successfully).
+
+     -d    Print debugging information to standard error.
+
+     -f    Treat each element as a file rather than a literal element.	The
+	   concatenation of all such files constitutes the population from
+	   which samples are drawn.
+
+     -s /path/to/samples
+	   Store sampled elements into the file /path/to/samples rather than
+	   into the default jxsampwor.samples in the current working
+	   directory.
+
+IMPLEMENTATION NOTES
+     jxsampwor is implemented using the Bourne Again Shell (bash) and GNU Core
+     Utilities (coreutils).
+
+RETURN VALUES
+     jxsampwor exits unsuccessfully (`1') if it cannot locate dependent
+     utilities (e.g., GNU shuf).  Otherwise, it exits successfully (`0') if a
+     sample is able to be printed to standard output.
+
+ENVIRONMENT
+     jxsampwor does not read or write any environment variables.
+
+FILES
+     jxsampwor.samples	  The default file into which samples drawn are
+			  recorded; placed into the current working directory.
+
+     /path/to/samples	  Established via the -s option.  Overrides the
+			  default jxsampwor.samples.
+
+EXAMPLES
+     Sample from ping-pong balls numbered 1-10:
+
+	   $ jxsampwor 1 2 3 4 5 6 7 8 9 10
+
+     Sample from ping-pong balls numbered 1-10 using a bash sequence
+     expression:
+
+	   $ jxsampwor {1..10}
+
+     Reset the samples history (assuming you are not using -s to specify a
+     custom samples history):
+
+	   $ rm jxsampwor.samples
+
+     Draw samples from elements contained in a single file (one per line):
+
+	   $ jxsampwor -f myfile
+
+     Draw samples from elements contained in multiple files (NOTE: the
+     population is constituted from the concatenation of all files):
+
+	   $ jxsampwor -f myfile myfile2 myfile3
+
+FORTHCOMING FEATURES
+     The following options are envisioned
+
+     -N    Do not replace the entire population of N elements after N
+	   successive samples; on the (N+1)th iteration, nothing is printed to
+	   standard output.  (Contrast this to the default behavior which is
+	   to replace all N elements of the population after they have been
+	   exhausted (which seems contradictory given jxsampwor is to sample
+	   without replacement).)
+
+     -r    Reset the samples history. (Presently, to reset the samples
+	   history, it is necessary to manually delete either
+	   jxsampwor.samples from the current working directory, or
+	   /path/to/samples specified by the -s option.)
+
+AUTHORS
+     Jason Massey (jason@janixsoft.com)
+
+Janix Software		       February 25, 2018		Janix Software

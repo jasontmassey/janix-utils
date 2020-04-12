@@ -1,0 +1,16 @@
+mkdir -p unix-reading-plan/25-design unix-reading-plan/75-systems-programming
+
+echo The Design and Implementation of the FreeBSD Operating System \
+    > unix-reading-plan/25-design/33-design-FreeBSD
+
+echo The Design of the UNIX Operating System \
+    > unix-reading-plan/25-design/33-design-UNIX
+
+echo UNIX Internals: The New Frontiers \
+    > unix-reading-plan/25-design/33-UNIX-internals
+
+echo The Linux Programming Interface: A Linux and UNIX System Programming Handbook \
+    > unix-reading-plan/75-systems-programming/50-linux-prog-interface
+
+echo Advanced Programming in the UNIX Environment \
+    > unix-reading-plan/75-systems-programming/50-adv-prog-unix-env

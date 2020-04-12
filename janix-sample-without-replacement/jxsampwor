@@ -1,0 +1,238 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------
+# jxsampwor -- Janix Software: "Sample Without Replacement"
+# ------------------------------------------------------------------------
+
+SCRIPT_NAME=jxsampwor
+SCRIPT_LONGNAME="Janix Sample Without Replacement"
+SCRIPT_DATE="Wed Feb 21 21:22:47 EST 2018"
+SCRIPT_VERSION="1.1"
+
+DEBUGGING=0
+ELEMENTS_ARE_FILENAMES=0
+SAMPLES_HISTORY=$SCRIPT_NAME.samples
+
+
+# ************************************************************************
+# ------------------------------------------------------------------------
+# UTILITY FUNCTIONS
+# ------------------------------------------------------------------------
+# ************************************************************************
+
+
+# ------------------------------------------------------------------------
+  function err_msg
+
+# echos its arguments to standard error
+# ------------------------------------------------------------------------
+{
+    echo $* >&2
+}
+
+# ------------------------------------------------------------------------
+  function help
+
+# displays syntax and command-line options to standard error successfully
+# ------------------------------------------------------------------------
+{
+    err_msg $SCRIPT_NAME - $SCRIPT_LONGNAME v$SCRIPT_VERSION \($SCRIPT_DATE\)
+    err_msg
+    err_msg $SCRIPT_NAME -h
+    err_msg $SCRIPT_NAME \[-d\] \[-f\] \[-s /path/to/samples\] element...
+    err_msg
+    err_msg -d
+    err_msg "print debugging information to standard error"
+    err_msg
+    err_msg -f
+    err_msg treat each element as a filename rather than a literal. The concatenation
+    err_msg of all such files constitutes the population from which samples shall be drawn.
+    err_msg
+    err_msg -h
+    err_msg "print this help summary then exit"
+    err_msg
+    err_msg -s /path/to/samples
+    err_msg store sampled elements into the file \'/path/to/samples\' rather than
+    err_msg into the default of \'$SAMPLES_HISTORY\' in the current working directory
+}
+
+
+# ------------------------------------------------------------------------
+  function debug_msg
+
+# outputs its positional arguments to standard error with a timestamp
+# if $DEBUGGING is non-zero
+# ------------------------------------------------------------------------
+{
+    if [ $DEBUGGING -eq 0 ]; then
+        return
+    fi
+
+    echo `date` $* >&2
+}
+
+
+# ------------------------------------------------------------------------
+  function check_prerequisites
+
+# ensures that executables we need are present (e.g., GNU coretils
+# `comm' and `shuf'
+# ------------------------------------------------------------------------
+{
+
+    # We use the GNU coreutils executables `comm' and `shuf' to perform
+    # commonality checking, and random permutations. Under FreeBSD these are
+    # named `gcomm' and `gshuf'.
+
+    debug_msg assigning COMM and SHUF based on OS
+    case $(uname -a | awk '{print $1}') in
+
+        FreeBSD|Darwin)
+            COMM=gcomm
+            SHUF=gshuf
+            ;;
+
+        *)
+            COMM=comm
+            SHUF=shuf
+            ;;
+    esac
+
+    debug_msg "checking for GNU comm..."
+    if ! which $COMM > /dev/null ; then
+        err_msg cannot locate GNU comm
+        exit 1
+    fi
+
+    debug_msg "checking for GNU shuf..."
+    if ! which $SHUF > /dev/null ; then
+        err_msg cannot locate GNU shuf
+        exit 1
+    fi
+}
+
+
+
+# ************************************************************************
+# ------------------------------------------------------------------------
+# MAIN CODE BEGINS
+# ------------------------------------------------------------------------
+# ************************************************************************
+
+
+# iterate over any command-line options, collecting any
+# option arguments along the way
+
+while getopts ":fhds:" CMDLINE_OPTION; do
+    case $CMDLINE_OPTION in
+        d)
+            DEBUGGING=1
+            ;;
+        f)
+            ELEMENTS_ARE_FILENAMES=1
+            ;;
+        h)
+            help
+            exit 0
+            ;;
+        s)
+            SAMPLES_HISTORY=$OPTARG
+            ;;
+    esac
+done
+
+debug_msg \$DEBUGGING=$DEBUGGING
+check_prerequisites
+
+debug_msg \$ELEMENTS_ARE_FILENAMES=$ELEMENTS_ARE_FILENAMES
+debug_msg \$SAMPLES_HISTORY=\"$SAMPLES_HISTORY\"
+debug_msg \$COMM=\"$COMM\"
+debug_msg \$SHUF=\"$SHUF\"
+
+# shift non-option arguments to begin at $1
+shift $(( OPTIND - 1 ))
+
+# if we lack entirely command-line arguments then exit successfully
+# with syntax
+
+if [ $# -eq 0 ]; then
+    help
+    exit 0
+fi
+
+# ------------------------------------------------------------------------
+# HEART OF THE SCRIPT
+# ------------------------------------------------------------------------
+
+
+# does the sampling history file exist?
+if [ -e $SAMPLES_HISTORY ]; then
+
+    # Yes, the sampling history file exists. So, obtain the next sample by
+    # using $COMM to output the samples which have not been sampled yet. Of
+    # these, we randomly shuffle, then pick the first.
+
+    # NOTE: we make use of BASH "process substitution" with the <() syntax
+
+    if [ $ELEMENTS_ARE_FILENAMES -eq 1 ]; then
+
+        SAMPLE=$($COMM -23 <( cat $* | sort )\
+            <(sort $SAMPLES_HISTORY) | $SHUF | head -n1)
+
+    else # elements are literal samples, not filenames
+
+        SAMPLE=$($COMM -23 <( for i in $*; do echo $i; done | sort )\
+            <(sort $SAMPLES_HISTORY) | $SHUF | head -n1)
+    fi
+
+
+    if [[ "$SAMPLE" != "" ]]; then
+
+        # We have a sample, so print it to standard output then append to our
+        # history file.
+
+        echo $SAMPLE
+        echo $SAMPLE >> $SAMPLES_HISTORY
+
+    else
+
+        # we didn't get a sample. This can only happen in the event of the
+        # sampling history file containing all samples;  thus, it's time to
+        # throw away the sampling history and start fresh.
+
+        if [ $ELEMENTS_ARE_FILENAMES -eq 1 ]; then
+
+            SAMPLE=$(cat $* | $SHUF | head -n1)
+
+        else # elements are literal samples, not filenames
+
+            SAMPLE=$(for i in $*; do echo $i; done | $SHUF | head -n1)
+        fi
+
+        # print it to standard output then create our history file.
+
+        echo $SAMPLE
+        echo $SAMPLE > $SAMPLES_HISTORY
+    fi
+
+else
+
+    # No, the sampling history file does NOT exist. So we randomly pick one of
+    # the items provided on the command line
+    
+    if [ $ELEMENTS_ARE_FILENAMES -eq 1 ]; then
+        SAMPLE=$(cat $* | $SHUF | head -n1)
+
+    else # elements are literal samples, not filenames
+        SAMPLE=$(for i in $*; do echo $i; done | $SHUF | head -n1)
+    fi
+
+    # print it to standard output then create our history file.
+
+    echo $SAMPLE
+    echo $SAMPLE > $SAMPLES_HISTORY
+fi
+
+
+# ------------------------------------------------------------------------
+# vim:fo+=croq:ts=4:sw=4:expandtab
+# ------------------------------------------------------------------------

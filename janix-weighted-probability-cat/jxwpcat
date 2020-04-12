@@ -1,0 +1,236 @@
+#!/usr/bin/env bash
+# ------------------------------------------------------------------------
+# jxwpcat - Janix Weighted Probability Cat
+# by Jason Massey (Janixman) jason@janixsoft.com
+# ------------------------------------------------------------------------
+shopt -s extglob
+
+SCRIPT_NAME=jxwpcat
+SCRIPT_LONGNAME="Janix Weighted Probability Cat"
+SCRIPT_DATE="Sun Jul 17 16:50:48 EDT 2016"
+SCRIPT_VERSION="1.3"
+
+# ************************************************************************
+# ************************************************************************
+# ------------------------------------------------------------------------
+# FUNCTIONS
+# ------------------------------------------------------------------------
+# ************************************************************************
+# ************************************************************************
+
+# ------------------------------------------------------------------------
+# function debug_msg
+# echos its arguments to standard error prefixed by a timestamp
+# ------------------------------------------------------------------------
+function debug_msg
+{
+    if [[ "$debugging" != "0" ]]; then
+        echo $(date) DEBUG: $* >&2
+    fi
+}
+
+# ------------------------------------------------------------------------
+# function err_msg
+# echos its arguments to standard error 
+# ------------------------------------------------------------------------
+function err_msg
+{
+    echo $(date) ERROR: $* >&2
+}
+
+# ------------------------------------------------------------------------
+# function help_msg
+# echos its arguments to standard error with extended formatting codes
+# enabled (e.g., tabs via '\t').
+# ------------------------------------------------------------------------
+function help_msg
+{
+    echo -e $* >&2
+}
+
+# ------------------------------------------------------------------------
+# show_help
+# This routine does not cause the script to exit.
+# ------------------------------------------------------------------------
+function show_help
+{
+    help_msg $SCRIPT_NAME - $SCRIPT_LONGNAME v$SCRIPT_VERSION \($SCRIPT_DATE\)
+    help_msg
+    help_msg jxwpcat \[-d\] path...
+    help_msg jxwpcat \[-h\]
+
+    help_msg
+    help_msg "\t-d\tenable verbose debugging to standard error"
+    help_msg "\t-h\tshow this help (then exit successfully)"
+    help_msg "\tpath\tlocation of a directory to descend, looking for a file to cat"
+}
+
+
+
+
+# ------------------------------------------------------------------------
+# function parse_directory
+# given a directory as an argument, gathers all the files matching a "node"
+# pattern into the $nodes array, choses one randomly, then either descends
+# recursively into the chosen directory (if so picked) or prints the file's
+# contents to standard output.
+# ------------------------------------------------------------------------
+function parse_directory
+{
+    debug_msg entering parse_directory
+    debug_msg parse_directory args: \'$*\'
+
+    local dir_to_parse=$1
+
+    # are we a directory?
+    if [[ -d $dir_to_parse ]]; then
+        debug_msg cd-ing to \'$dir_to_parse\'
+        if ! pushd $dir_to_parse &> /dev/null; then
+            err_msg cannot cd into $dir_to_parse
+            retval=1
+            return
+        fi
+    else
+        err_msg \'$dir_to_parse\' is not a directory
+        retval=1
+        return
+    fi
+
+    # Create a list of files whose names match the examples below. Each such
+    # file, whether a directory or regular file, is called a 'node', as in a
+    # tree data structure.  Directories constitute "interior" nodes; regular
+    # files "leaf" nodes.
+    #
+    # e.g.,
+    #
+    # 35-networking
+    # 25-computer-science
+
+    # note that the shopt 'extglob' is required for the +(...) bash extended
+    # pattern matching
+    local -a nodes=( +([[:digit:]])-* )
+    debug_msg \$nodes=\'"${nodes[@]}"\'
+
+    # confirm that we actually located some files
+    if [[ ${nodes[0]} == "+([[:digit:]])-*" ]]; then
+        debug_msg no nodes found within this directory
+        retval=1
+        popd &> /dev/null
+        return
+    fi
+
+    # At this point, the $nodes array contains a list of files (regular and
+    # directory) which require parsing so that exactly one may be chosen
+    # according to a random sample
+
+    # Here an architectural/data-structure decision was made to best facilitate
+    # the conceptual and coding ease. From $nodes we build up another array
+    # ($sample_space) whose purpose is to "expand" the nodes into $sample_space
+    # elements. If the node is defined as '25-computer-science' then 25
+    # elements will be allocated to $sample_space.  Once $sample_space is
+    # completely populated then a random integer is produced to select a random
+    # index within $sample_space.
+
+    local sample_space
+    local node
+
+    # iterate over every node, extracting its numeric prefix, then populate
+    # the $sample_space array
+    for node in ${nodes[*]}; do
+        debug_msg parsing node \'$node\'
+
+        local -i num_prefix
+        num_prefix=${node%%-*}
+        debug_msg \$num_prefix = \'$num_prefix\'
+
+        # a node such as "5-sys-admin" will result in 5 elements in
+        # $sample_space, all of which having a value of "5-sys-admin"
+        local -i i
+        for i in $(eval echo {1..$num_prefix}); do
+            sample_space+=($node)
+        done
+    done
+
+    local -i num_elements_sample_space=${#sample_space[*]}
+
+    debug_msg \$sample_space elements = $num_elements_sample_space
+    debug_msg \$sample_space = "${sample_space[@]}"
+
+    # select an element of $sample_space at random.
+    # note that $RANDOM is a bash builtin parameter.
+
+    local -i random_index=$(( RANDOM % num_elements_sample_space ))
+    debug_msg \$random_index = $random_index
+
+    local random_node=${sample_space[$random_index]}
+    debug_msg \$random_node = \'$random_node\'
+
+    # Are we a directory?
+    if [[ -d $random_node ]]; then
+        debug_msg parse_directory recursive call \'$random_node\'
+        parse_directory $random_node
+
+    else # we're a regular file
+        debug_msg cat-ing out \'$random_node\'
+        if ! cat $random_node ; then
+            err_msg cannot cat $random_node
+            retval=1
+        fi
+    fi
+
+    popd &> /dev/null
+
+    debug_msg exiting parse_directory
+}
+
+# ************************************************************************
+# ************************************************************************
+# ------------------------------------------------------------------------
+# SCRIPT ENTRY POINT
+# ------------------------------------------------------------------------
+# ************************************************************************
+# ************************************************************************
+
+# a global return value which is used to signal to the invoking shell
+# that something failed during execution.
+retval=0
+
+# default variable assignments
+debugging=0
+showhelp=0
+
+# parse command-line options
+while getopts "dh" option; do
+    case $option in
+        d)
+            debugging=1
+            ;;
+        h)
+            showhelp=1
+            ;;
+    esac
+done
+
+# remove the options from the command-line
+shift $((OPTIND-1))
+
+if (( $# == 0 )); then
+    showhelp=1
+fi
+
+if (( $showhelp != 0 )); then
+    show_help
+    exit 0
+fi
+
+# iterate over paths
+while [[ "$1" != "" ]]; do
+    parse_directory $1
+    shift
+done
+
+exit $retval
+
+# ------------------------------------------------------------------------
+# END OF SCRIPT
+# ------------------------------------------------------------------------

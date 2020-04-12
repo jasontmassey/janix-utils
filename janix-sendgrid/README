@@ -1,0 +1,8 @@
+janix-sendgrid
+
+Simple utility for Janixman to email himself things via the SendGrid web
+service.
+
+SYNTAX:
+
+cat some-file | /path/to/janix-sendgrid [-s subject] [addressee...]

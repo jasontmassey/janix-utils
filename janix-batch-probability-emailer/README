@@ -1,0 +1,11 @@
+jxptbatch-emailer "Janix Batch Probability Emailer"
+
+In short, jxptbatch-emailer sends an individual email for each line of standard
+output produced by jxptbatch.
+
+The program changes into the indicated working-path (which is presumably
+configured for the jxptbatch utility), invokes jxptbatch, then for each line
+written to standard output, creates an email with the indicated subject to
+each indicated addressee.
+
+In essence, this makes jxptbatch-email a wrapper for jxptbatch.

@@ -1,0 +1,202 @@
+.Dd July 10, 2016
+.Dt JXWPCAT 1 USD
+.Os Janix Software
+.Sh NAME
+.Nm jxwpcat
+.Nd Janix Weighted Probability Cat
+.Sh SYNOPSIS
+.Nm
+.Op Fl d
+.Ar path ...
+.Nm
+.Op Fl h
+.Sh DESCRIPTION
+.Nm
+chooses at random exactly one regular file from within
+.Ar path Ap s
+directory hierarchy then prints its contents to standard output.
+Rather than randomly picking
+.Qq just any
+file from
+.Qq just any
+directory,
+regular files and directories within
+.Ar path
+must be named in a particular fashion (see
+.Sx File Naming
+below) in order to be considered candidates for selection.
+.Ss Command-line Options and Arguments
+Invoke
+.Nm
+alone, or with the
+.Fl h
+option to display a brief help page (to standard error) then to exit (successfully).
+.Pp
+Otherwise, invoke
+.Nm
+with one or more
+.Ar path
+arguments to recursively descend into each
+.Ar path Ap s
+directory hierarchy looking for a random regular file to print to standard output.
+Note that if more than one such
+.Ar path
+argument are supplied,
+.Nm
+will not begin locating a file from the ith
+.Ar path
+until one has already been chosen and printed from the (i-1)th
+.Ar path .
+.Pp
+The
+.Fl d
+option enables verbose debugging output to standard error.
+.Ss File Naming
+Regular files and directories within each
+.Ar path
+must be named as the following examples illustrate or
+.Nm
+ignores them:
+.Pp
+.Bl -ohang -offset indent -compact
+.It
+.Li 10-unix
+.It
+.Li 25-computer-science
+.It
+.Li 5-networking
+.El
+.Pp
+The general pattern (in bash extended pattern extglob syntax) is:
+.Pp
+.Bd -literal -offset indent
++([[:digit:]])-*
+.Pp
+which in English reads:
+.Pp
+.Qq one or more digits followed by a single dash followed by anything.
+.Ed
+.Ss File Selection and Weighted Probability
+.Nm
+uses the prefixing integer (e.g., the
+.Sq 10
+from
+.Ql 10-unix ,
+as given in the above example) to decide how much weight
+should be given to the file.
+Think of balls placed into a bin.
+Using the examples from above:
+.Pp
+.Bl -item -offset indent -compact
+.It
+.Qq unix
+would get 10 balls placed into the bin;
+.It
+.Qq computer-science
+would get 25 balls placed into the bin; and
+.It
+.Qq networking
+would get 5 balls placed into the bin.
+.El
+.Pp
+After placing all the balls into the bin, exactly one ball is chosen at random.
+If the chosen
+.Qq ball
+happens to be a directory, then
+.Nm
+recursively descends into it looking for a regular file;
+else if the chosen
+.Qq ball
+is a regular file then its contents are printed to standard output.
+.Nm
+is now done with this
+.Ar path
+and proceeds to the next
+.Ar path
+(if any).
+.Sh IMPLEMENTATION NOTES
+.Nm
+uses the bash shell language exclusively.
+.Sh RETURN VALUES
+.Nm
+returns 0 if it's able to successfully change directory into every
+.Ar path
+argument and print every chosen regular file to standard output;
+else
+.Nm
+returns 1 if it encounters a problem anywhere along the way.
+.\" This next command is for sections 1, 6, 7 and 8 only.
+.\" .Sh ENVIRONMENT
+.\" .Sh FILES
+.Sh EXAMPLE
+.Ss A UNIX book fanatic
+Suppose you want to partition the time you spend reading UNIX books according to
+the following scheme:
+.Pp
+.Bl -item -offset indent -compact
+.It
+25% design:
+.Bl -hang -offset indent -compact
+.It 33%:
+.Qq The Design and Implementation of the FreeBSD Operating System ,
+.It 33%:
+.Qq The Design of the UNIX Operating System ,
+and
+.It 33%:
+.Qq UNIX Internals: The New Frontiers ;
+and
+.El
+.Pp
+.It
+75% systems programming:
+.Bl -hang -offset indent -compact
+.It 50%:
+.Qq The Linux Programming Interface: A Linux and UNIX System Programming Handbook ,
+and
+.It 50%:
+.Qq Advanced Programming in the UNIX Environment .
+.El
+.El
+.Pp
+.Ss Commands to create the directories and file structures
+.Bd -literal -offset left -compact
+mkdir -p unix-reading-plan/25-design unix-reading-plan/75-systems-programming
+
+echo The Design and Implementation of the FreeBSD Operating System \\
+    > unix-reading-plan/25-design/33-design-FreeBSD
+
+echo The Design of the UNIX Operating System \\
+    > unix-reading-plan/25-design/33-design-UNIX
+
+echo UNIX Internals: The New Frontiers \\
+    > unix-reading-plan/25-design/33-UNIX-internals
+
+echo The Linux Programming Interface: A Linux and UNIX System Programming Handbook \\
+    > unix-reading-plan/75-systems-programming/50-linux-prog-interface
+
+echo Advanced Programming in the UNIX Environment \\
+    > unix-reading-plan/75-systems-programming/50-adv-prog-unix-env
+.Ed
+.Pp
+Once the above directories and files are in place, invoking
+.Nm
+with an argument of
+.Sq unix-reading-plan
+results in exactly one of the books being printed to standard output (randomly
+according to the weights in the scheme).
+.\" .Sh DIAGNOSTICS
+.\" .Sh COMPATIBILITY
+.\" .Sh ERRORS
+.\" .Sh SEE ALSO
+.\" .Sh STANDARDS
+.Sh HISTORY
+The author needed an automated facility to decide how much time to spend studying
+different disciplines and books.
+So, for my own personal use, I've created a couple directories (for work and
+personal topics);
+.Nm
+executes daily on those directories, with the results emailed to me indicating which
+books I am to study that day.
+.Sh AUTHORS
+.An "Jason Massey" Aq jason@janixsoft.com
+.\" .Sh BUGS

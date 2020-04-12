@@ -1,0 +1,95 @@
+#!/usr/local/bin/bash
+# ------------------------------------------------------------------------
+SCRIPT_NAME=jxptbatch
+SCRIPT_LONGNAME="Janix Batch Probability Tester"
+SCRIPT_DATE="Sat Apr 15 07:10:49 EDT 2017"
+SCRIPT_VERSION="1.0"
+
+# ************************************************************************
+# ------------------------------------------------------------------------
+# UTILITY FUNCTIONS
+# ------------------------------------------------------------------------
+# ************************************************************************
+
+# ------------------------------------------------------------------------
+# function err_msg
+# echos its arguments to standard error 
+# ------------------------------------------------------------------------
+function err_msg
+{
+    echo $(date) ERROR: $* >&2
+}
+
+# ------------------------------------------------------------------------
+# function debug_msg
+# echos its arguments to standard error prefixed by a timestamp
+# ------------------------------------------------------------------------
+function debug_msg
+{
+    if [[ "$debugging" != "0" ]]; then
+        echo $(date) DEBUG: $* >&2
+    fi
+}
+
+# ************************************************************************
+# ------------------------------------------------------------------------
+# MAIN CODE BEGINS
+# ------------------------------------------------------------------------
+# ************************************************************************
+debugging=0
+table="jxpttab"
+
+debug_msg $SCRIPT_NAME starting
+
+# parse command-line options
+while getopts "d" option; do
+    case $option in
+        d)
+            debugging=1
+            ;;
+    esac
+done
+
+debug_msg reading table $table
+if [[ ! -r $table ]]; then
+    err_msg "Cannot locate the table in the current directory"
+    exit 1
+else
+    debug_msg located table
+fi
+
+# iterate over lines within the table
+while read denominator numerator url; do
+    debug_msg \$denominator = \'$denominator\'
+    debug_msg \$numerator = \'$numerator\'
+    debug_msg curl-ing \'$url\'
+
+    tempfile=$(mktemp)
+
+    if curl -s $url > $tempfile; then
+        debug_msg \$tempfile \'$tempfile\' successfully created
+
+        while read element; do
+            debug_msg read \$element = \'$element\'
+
+            # perform the probability test
+            debug_msg performing probability test
+            jxpt $denominator $numerator && echo $element
+
+        done < $tempfile
+    else
+        debug_msg curl error: $?
+    fi
+
+    # remove the tempfile
+    if rm -f $tempfile 2>/dev/null; then
+        debug_msg successfully rm-ed \$tempfile \'$tempfile\'
+    else
+        debug_msg ERROR rm-ing \$tempfile \'$tempfile\'
+    fi
+
+# redirect into while/read the contents of the table with any comments
+# and blank lines removed
+done < <(cat $table | sed 's/#.*//' | grep -v '^[[:space:]]*$')
+
+debug_msg $SCRIPT_NAME ending
