@@ -3,7 +3,7 @@
 # jxpt -- Janix Software: "Probability Tester"
 # ------------------------------------------------------------------------
 # the purpose of jxpt is to condition a bash command pipeline on its
-# success of failure, thereby ensuring that said pipeline only runs
+# success or failure, thereby ensuring that said pipeline only runs
 # according to the probability implied by jxpt's arguments.
 #
 # For example, if you want /some/command to run half the time, say,
