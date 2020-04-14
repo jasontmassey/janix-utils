@@ -1,0 +1,124 @@
+#!/bin/env bash
+# ------------------------------------------------------------------------
+# jxpt -- Janix Software: "Probability Tester"
+# ------------------------------------------------------------------------
+# the purpose of jxpt is to condition a bash command pipeline on its
+# success of failure, thereby ensuring that said pipeline only runs
+# according to the probability implied by jxpt's arguments.
+#
+# For example, if you want /some/command to run half the time, say,
+# from cron, you would issue:
+#
+# jxpt 2 1 && /some/command
+#
+# The probability resulting from the above command is, statistically,
+# '1' out of '2' times.
+# ------------------------------------------------------------------------
+SCRIPT_NAME=jxpt
+SCRIPT_LONGNAME="Janix Probability Tester"
+SCRIPT_DATE="Mon 13 Apr 2020 05:23:04 PM EDT"
+SCRIPT_VERSION="2.0"
+
+
+# ************************************************************************
+# ------------------------------------------------------------------------
+# UTILITY FUNCTIONS
+# ------------------------------------------------------------------------
+# ************************************************************************
+
+# ------------------------------------------------------------------------
+  function err_msg
+
+# echos its arguments to standard error
+# ------------------------------------------------------------------------
+{
+    echo ERROR: $* >&2
+}
+
+
+# ------------------------------------------------------------------------
+  function help
+
+# displays syntax and command-line options to standard error successfully
+# ------------------------------------------------------------------------
+{
+    cat >&2 <<EOF
+$SCRIPT_NAME - $SCRIPT_LONGNAME (v$SCRIPT_VERSION) $SCRIPT_DATE
+syntax: jxpt denominator [numerator]
+EOF
+}
+
+
+# ------------------------------------------------------------------------
+  function is_integer
+
+# tests its argument to confirm its a positive integer
+# ------------------------------------------------------------------------
+{
+    if [[ $1 =~ ^[[:digit:]]+$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
+# ************************************************************************
+# ------------------------------------------------------------------------
+# MAIN
+# ------------------------------------------------------------------------
+# ************************************************************************
+
+# print our expected syntax if no arguments are supplied
+if [[ $# == 0 ]]; then
+    help
+    exit 0
+fi
+
+denominator=$1
+numerator=$2
+
+# numerator defaults to 1 if not specified
+if [[ $numerator == "" ]]; then
+    numerator=1
+fi
+
+declare -n variable
+
+# confirm that both variables are integers
+for variable in numerator denominator; do
+    if ! is_integer $variable; then
+        err_msg \'$variable\' must be a positive integer... exiting
+        exit 1
+    fi
+done
+
+if (( denominator <= 0 )); then
+    err_msg denominator must be greater than zero... exiting
+    exit 1
+fi
+
+if (( numerator < 0 )); then
+    err_msg numerator must be greater zero or greater... exiting
+    exit 1
+fi
+
+# We should really test that both the numerator and denominator
+# are both less than or equal to 32767. But, meh.
+
+# seed the bash random number generator
+RANDOM=$RANDOM
+
+# produce a random number between 1 and $denominator
+random_pick=$(( (RANDOM % denominator)+1 ))
+
+if (( random_pick <= numerator )); then
+    exit 0
+else
+    exit 1
+fi
+
+
+# ------------------------------------------------------------------------
+# vim:fo+=croq:ts=4:sw=4:expandtab
+# ------------------------------------------------------------------------
