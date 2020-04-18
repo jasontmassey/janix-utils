@@ -1,48 +1,56 @@
-# ------------------------------------------------------------------------
-# PURPOSE
-#
-# `pt' is a "probability tester" which enables you to run a specific
-# command on a random basis. For example, if you want want a command to
-# execute 7 times out of 11 then you issue as follows:
-#
-#   pt 11 7 && /path/to/your/command [args...]
-#
-#
-# EXAMPLES
-#
-# You wish to have a command run at midnight, on average, seven days out of
-# every thirty days; place this entry into your crontab:
-#
-#   0 0 * * * pt 30 7 && /path/to/your/command [args...]
-#
-#
-# You wish to have a command run randomly five times every hour; place this
-# entry into your crontab
-#
-#   * * * * * pt 60 5 && /path/to/your/command [args...]
-#
-#
-# A NOTE ON PROBABILITY
-#
-# It is important for you to realize that `pt 30 7' will randomly cause
-# an event to run, ON AVERAGE, seven out of thirty times -- not EXACTLY
-# seven out of thirty times. So, your `pt 30 7' command, should you run it
-# ten thousand times, would return `0' (i.e., cause your command to run)
-# approximately 2,333 times, but not exactly. Classical probability must
-# be viewed as a "long term average."
-#
-#
-# SYNTAX
-#
-# pt denominator [numerator]
-#
-# If the numerator is omitted then it defaults to 1. The probability of `pt'
-# returning `0' (success) is given by proper fraction numeration/denominator.
-#
-#
-# RETURNS
-#
-#   0 if the random event happens
-#   1 otherwise
-#
-# ------------------------------------------------------------------------
+JXPT(1)                  General Commands Manual (usd)                 JXPT(1)
+
+NNAAMMEE
+     jjxxpptt - Janix Probability Tester
+
+SSYYNNOOPPSSIISS
+     jjxxpptt _d_e_n_o_m_i_n_a_t_o_r [_n_u_m_e_r_a_t_o_r] && /path/to/a/command [args...]
+
+DDEESSCCRRIIPPTTIIOONN
+     jjxxpptt accepts a probability as an argument (as denoted by the quotient:
+     _n_u_m_e_r_a_t_o_r divided by _d_e_n_o_m_i_n_a_t_o_r) then randomly generates an event.  If
+     that event corresponds to the probability, then jjxxpptt exits successfully;
+     otherwise, jjxxpptt exits unsuccessfully.  If the optional _n_u_m_e_r_a_t_o_r is
+     omitted from the command-line then it takes on a default value of `1'.
+
+   TThhee SSppiirriitt ooff tthhee UUttiilliittyy
+     jjxxpptt is intended for situations when you want to invoke a command on the
+     basis of some probability.  For example, imagine a job you want scheduled
+     to run, _o_n _a_v_e_r_a_g_e, once every seven days at midnight.  The following
+     crontab entry accomplishes the goal:
+
+           0 0 * * * jxpt 7 1 && /path/to/a/command
+
+     Note that the crontab entry executes _e_v_e_r_y _d_a_y; however, jjxxpptt will only
+     exit successfully, _o_n _a_v_e_r_a_g_e, one out of every seven executions.  The
+     bash shell's `&&' control operator invokes `/path/to/a/command' only if
+     jjxxpptt exits successfully.
+
+   AA NNOOTTEE OONN PPRROOBBAABBIILLIITTYY
+     Classical probability must be viewed as a long term average.  It is
+     important to realize that, for example, jjxxpptt 30 7 causes an event to run,
+     _o_n _a_v_e_r_a_g_e, seven out of thirty times -- not _e_x_a_c_t_l_y seven out of thirty
+     times.  So, a jjxxpptt 30 7 command, should you run it ten thousand times,
+     would exit successfully _a_p_p_r_o_x_i_m_a_t_e_l_y 2,333 times, but not exactly.
+
+IIMMPPLLEEMMEENNTTAATTIIOONN NNOOTTEESS
+     jjxxpptt uses the bash shell language exclusively.
+
+RREETTUURRNN VVAALLUUEESS
+     jjxxpptt returns 0 (successful) if the event it randomly produces matches the
+     supplied probability, else jjxxpptt returns 1 (unsuccessful).
+
+EENNVVIIRROONNMMEENNTT
+     jjxxpptt neither reads nor writes environment variables.
+
+FFIILLEESS
+     jjxxpptt neither reads nor writes disk files.
+
+HHIISSTTOORRYY
+     The author needed a utility to randomly schedule the emailing of quotes
+     and reminders.
+
+AAUUTTHHOORRSS
+     Jason Massey <jason@jasontmassey.com>
+
+Janix Software                  April 18, 2020                  Janix Software

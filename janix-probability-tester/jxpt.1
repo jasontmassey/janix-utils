@@ -1,0 +1,94 @@
+.Dd April 18, 2020
+.Dt JXPT 1 USD
+.Os Janix Software
+.Sh NAME
+.Nm jxpt
+.Nd Janix Probability Tester
+.Sh SYNOPSIS
+.Nm
+.Ar denominator
+.Op Ar numerator
+&&
+/path/to/a/command 
+.Op args...
+.Sh DESCRIPTION
+.Nm
+accepts a probability as an argument (as denoted by the quotient:
+.Ar numerator
+divided by
+.Ar denominator )
+then randomly generates an event.
+If that event corresponds to the probability, then
+.Nm
+exits successfully;
+otherwise,
+.Nm
+exits unsuccessfully.
+If the optional
+.Ar numerator
+is omitted from the command-line then it takes on a default value of 
+.Sq 1 .
+.Ss The Spirit of the Utility
+.Nm
+is intended for situations when you want to invoke a command on the
+basis of some probability.
+For example, imagine a job you want scheduled to run,
+.Em on average , 
+once every seven days at midnight.
+The following crontab entry accomplishes the goal:
+.Bd -literal -offset indent
+0 0 * * * jxpt 7 1 && /path/to/a/command
+.Ed
+.Pp
+Note that the crontab entry executes
+.Em every day ;
+however,
+.Nm
+will only exit successfully,
+.Em on average ,
+one out of every seven executions.
+The bash shell's
+.Ql &&
+control operator invokes
+.Ql /path/to/a/command
+only if
+.Nm
+exits successfully.
+.Ss A NOTE ON PROBABILITY
+Classical probability must be viewed as a long term average.
+It is important to realize that, for example,
+.Nm
+30 7 causes an event to run,
+.Em on average ,
+seven out of thirty times -- not
+.Em exactly
+seven out of thirty times.
+So, a
+.Nm
+30 7 command, should you run it ten thousand times, would exit successfully
+.Em approximately
+2,333 times, but not exactly.
+.Sh IMPLEMENTATION NOTES
+.Nm
+uses the bash shell language exclusively.
+.Sh RETURN VALUES
+.Nm
+returns 0 (successful) if the event it randomly produces matches the
+supplied probability, else
+.Nm
+returns 1 (unsuccessful).
+.Sh ENVIRONMENT
+.Nm
+neither reads nor writes environment variables.
+.Sh FILES
+.Nm
+neither reads nor writes disk files.
+.\" .Sh ERRORS
+.\" .Sh SEE ALSO
+.\" .Sh STANDARDS
+.Sh HISTORY
+The author needed a utility to randomly schedule the emailing of
+quotes and reminders.
+.Sh AUTHORS
+.An "Jason Massey" Aq jason@jasontmassey.com
+.\" .Sh BUGS
