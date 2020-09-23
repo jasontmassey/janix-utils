@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# ----------------------------------------------------------------------------
+# edit the arguments below to constrain time and space
+# ----------------------------------------------------------------------------
+PCAP_FILE_SIZE_MB=100
+PCAP_FILE_COUNT=25
+PCAP_INTERFACE=ens192
+PCAP_DEST_DIR="/tmp"
+TIMEOUT_TIME="60m"
+TCPDUMP_EXPRESSION="port 8080"
+# ----------------------------------------------------------------------------
+# DO NOT EDIT BELOW THIS POINT
+# ----------------------------------------------------------------------------
+now=$(date +%Y%m%dT%H%M%S%Z)
+LOGFILE="$PCAP_DEST_DIR/pcap-${now}.log"
+PCAPFILE="$PCAP_DEST_DIR/pcap-${now}-"
+# empty the log, and all redirections below can use >>
+>$LOGFILE
+echo $(date) starting >> $LOGFILE
+timeout $TIMEOUT_TIME tcpdump -i $PCAP_INTERFACE -C $PCAP_FILE_SIZE_MB -W $PCAP_FILE_COUNT -w $PCAPFILE $TCPDUMP_EXPRESSION
+echo $(date) ending >> $LOGFILE
